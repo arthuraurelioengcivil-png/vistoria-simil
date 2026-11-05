@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#005ca9">
+<title>Vistoria SIMIL</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<style>
+:root{
+  --azul:#005ca9; --azul-esc:#003f74; --laranja:#f39200; --fundo:#f4f5f7; --cartao:#fff;
+  --texto:#1c2430; --suave:#5d6878; --linha:#dde1e7; --chip:#eef1f5; --ok:#1f8a4c; --alerta:#c0392b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--fundo);color:var(--texto);
+  font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:5;background:var(--azul);color:#fff;padding:10px 16px calc(10px) 16px;
+  padding-top:max(10px,env(safe-area-inset-top))}
+header h1{font-size:17px;margin:0;font-weight:600}
+header .sub{font-size:13px;opacity:.85;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barra{height:4px;background:rgba(255,255,255,.25);border-radius:2px;margin-top:8px;overflow:hidden}
+.barra i{display:block;height:100%;width:0;background:var(--laranja);transition:width .2s}
+main{padding:12px 12px 120px;max-width:720px;margin:0 auto}
+.cartao{background:var(--cartao);border-radius:12px;border:1px solid var(--linha);margin-bottom:12px;overflow:hidden}
+.cartao>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:10px;font-weight:600}
+.cartao>summary::-webkit-details-marker{display:none}
+.cartao>summary .cont{margin-left:auto;font-size:13px;font-weight:500;color:var(--suave);background:var(--chip);
+  padding:2px 9px;border-radius:10px}
+.cartao>summary .cont.ok{background:#e3f4ea;color:var(--ok)}
+.cartao>summary::after{content:"▾";color:var(--suave);transition:transform .15s}
+.cartao[open]>summary::after{transform:rotate(180deg)}
+.corpo{padding:0 16px 14px}
+.campo{padding:12px 0;border-top:1px solid var(--linha)}
+.campo:first-child{border-top:0}
+.rot{font-size:14px;color:var(--suave);margin-bottom:8px;display:flex;justify-content:space-between;gap:8px}
+.rot .limpar{color:var(--azul);font-size:13px;background:none;border:0;padding:0;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--linha);background:var(--chip);border-radius:20px;padding:9px 14px;font-size:15px;
+  min-height:42px;cursor:pointer;color:var(--texto);text-align:left}
+.chip.on{background:var(--azul);border-color:var(--azul);color:#fff}
+.num{display:flex;align-items:center;gap:10px}
+.num button{width:46px;height:46px;border-radius:10px;border:1.5px solid var(--linha);background:var(--chip);font-size:22px}
+.num input{width:80px;text-align:center}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;font:inherit;padding:11px 12px;
+  border:1.5px solid var(--linha);border-radius:10px;background:#fff;color:var(--texto)}
+textarea{min-height:90px;resize:vertical}
+.grade{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grade .rot{margin-bottom:4px}
+.lista-os{display:flex;flex-direction:column;gap:10px}
+.os{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.os b{display:block}
+.os small{color:var(--suave)}
+.os .tag{float:right;font-size:12px;padding:2px 8px;border-radius:9px;background:var(--chip);color:var(--suave)}
+.os .tag.feita{background:#e3f4ea;color:var(--ok)}
+.rodape{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--linha);
+  padding:10px 12px max(10px,env(safe-area-inset-bottom));display:flex;gap:10px;z-index:6}
+.btn{flex:1;border:0;border-radius:12px;padding:14px;font:600 16px system-ui,sans-serif;cursor:pointer}
+.btn.pri{background:var(--azul);color:#fff}
+.btn.sec{background:var(--chip);color:var(--texto)}
+.aviso{font-size:13px;color:var(--suave);margin:4px 2px 12px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1c2430;color:#fff;padding:10px 16px;
+  border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90%}
+.toast.on{opacity:1}
+.oculto{display:none!important}
+h2{font-size:15px;margin:18px 4px 8px;color:var(--suave);font-weight:600}
+.pre{font-size:13px;color:var(--suave);background:var(--chip);border-radius:8px;padding:8px 10px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="titulo">Vistoria SIMIL</h1>
+  <div class="sub" id="subtitulo">Escolha a O.S.</div>
+  <div class="barra"><i id="progresso"></i></div>
+</header>
+
+<main>
+  <!-- tela 1: lista de O.S. -->
+  <section id="telaLista">
+    <p class="aviso" id="infoPacote">Nenhuma O.S. carregada. Antes de sair, toque em <b>Carregar O.S.</b> e escolha o arquivo
+      <b>_pacote_vistoria.json</b> no Drive (pasta Vistorias SIMIL).</p>
+    <div class="lista-os" id="listaOS"></div>
+    <h2>Sem pacote?</h2>
+    <div class="cartao"><div class="corpo" style="padding-top:14px">
+      <div class="rot">Nº da O.S.</div>
+      <input type="text" id="novaRef" placeholder="7378.0041.001198939/2026.01.01" inputmode="numeric">
+      <div class="rot" style="margin-top:12px">Tipo do imóvel</div>
+      <div class="chips" id="novaTipo">
+        <button class="chip" data-v="casa">Casa</button><button class="chip" data-v="apartamento">Apartamento</button>
+      </div>
+      <div class="chips" style="margin-top:10px">
+        <button class="chip" id="novaCond" data-v="1">Em condomínio</button>
+      </div>
+      <button class="btn pri" style="width:100%;margin-top:14px" id="btnNova">Iniciar vistoria</button>
+    </div></div>
+  </section>
+
+  <!-- tela 2: formulário -->
+  <section id="telaForm" class="oculto">
+    <div class="pre" id="preDados"></div>
+    <div id="secoes"></div>
+  </section>
+</main>
+
+<div class="rodape" id="rodLista">
+  <button class="btn sec" id="btnCarregar">Carregar O.S.</button>
+  <input type="file" id="arqPacote" accept=".json,application/json" class="oculto">
+</div>
+<div class="rodape oculto" id="rodForm">
+  <button class="btn sec" id="btnVoltar">Voltar</button>
+  <button class="btn pri" id="btnSalvar">Salvar vistoria</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Opções idênticas às do SIMIL (o bot do PC seleciona pelo texto).
+   Chave de cada campo = sufixo do id no SIMIL; "aba" = painel.
+   ============================================================ */
+const PADRAO = ["Alto (superior, luxo)","Alto (por predominância)","Normal (c/ aspectos de alto)",
+  "Normal (forte predominância)","Normal (c/ aspectos de baixo)","Baixo","Mínimo"];
+const CONSERV = ["Em construção ou na planta","Bom (aparência de novo)","Bom (aparência de usado)",
+  "Regular (reparos simples)","Regular (reparos importantes)","Ruim"];
+const CONSERV_EMP = ["Em implantação ou na planta"].concat(CONSERV.slice(1));
+const FSV = ["Favorável","Desfavorável","Sem Influência"];
+const CERCA = ["Sem Cercamento","Arame","Tela","Gradil","Muro"];
+const PISO = ["Cimentado","Cerâmica Comercial","Cerâmica Extra","Porcelanato 2ª","Porcelanato 1ª","Granito/Mármore 2ª",
+  "Granito/Mármore 1ª","São Tomé","Ardósia","Granitina","Vinílico","Flutuante","Madeira","Emborrachado","Formicado"];
+const PAREDE = ["Pintura/Textura","Cerâmica Comercial","Cerâmica Extra","Azulejo","Porcelanato 2ª","Porcelanato 1ª",
+  "Cimentado","Grafiato","Granito/Mármore 2ª","Granito/Mármore 1ª","São Tomé","Ardósia","Granitina","Vinílico",
+  "Madeira","Emborrachado","Formicado"];
+const ESQ = ["Alumínio","Ferro","Vidro Temperado","PVC","Madeira"];
+const FACH = ["Pintura/Textura","Sem Revestimento","Cimentado","Grafiato","Cerâmica de Baixa Qualidade",
+  "Cerâmica de Boa Qualidade","Porcelanato","Concreto Aparente","Ardósia ou Compatível","COBOGO",
+  "Vulcanizado ou Formicado","Granitina ou Compatível","Madeira ou Emadeirado"];
+const FORRO = ["Laje","Forro de gesso","Forro de PVC","Telhado aparente","Forro de madeira","Forro de aglomerado",
+  "Forro metálico","Forro outros"];
+const TELHADO = ["Telha de barro, sem laje","Telha de barro, com laje","Telha de fibrocimento, sem laje",
+  "Telha de fibrocimento, com laje","Telha de concreto, sem laje","Telha de concreto, com laje",
+  "Telha metálica, sem laje","Telha metálica, com laje","Laje impermeabilizada"];
+const EQUIP = [["equipamento_15","Portaria e/ou Guarita"],["equipamento_05","Equipamento de Segurança"],
+  ["equipamento_16","Salão de Festas"],["equipamento_13","Playground"],["equipamento_11","Piscina"],
+  ["equipamento_06","Espaço com Churrasqueira"],["equipamento_21","Quadra Poliesportiva"],
+  ["equipamento_10","Mini-Quadra Esportiva"],["equipamento_23","Pilotis"],["equipamento_09","Rede Interna de Gás"],
+  ["equipamento_03","Ar Condicionado"],["equipamento_01","Aquecimento Solar"],["equipamento_22","Central Aquecimento de Água"],
+  ["equipamento_40","Gerador"],["equipamento_14","Poço Artesiano"],["equipamento_12","Piscina Privativa"],
+  ["equipamento_07","Espaço c/ Churrasqueira Privativo"],["equipamento_18","Sauna / Ofurô / Hidromassagem"],
+  ["equipamento_19","Sauna / Ofurô / Hidromassagem Privativa"],["equipamento_20","Quadra de Tênis"],
+  ["equipamento_04","Campo de Futebol/Golfe"],["equipamento_08","Lareira"],["equipamento_02","Armários Embutidos"],
+  ["equipamento_17","Outros Salões de Lazer"],["equipamento_25","Não Possui Equipamentos"]];
+const COMODOS = [["quarto","Quartos"],["banheirosPrivativos","Banheiros privativos (suíte)"],["banheiroSocial","Banheiros sociais"],
+  ["salas","Salas"],["cozinha","Cozinhas"],["cozinhaAmericana","Cozinha americana"],["copaCozinhaConjugada","Copa-cozinha conjugada"],
+  ["cozinhaAServicoConjugada","Cozinha/A. serviço conjugada"],["copa","Copas"],["areaServico","Áreas de serviço"],
+  ["areaServicoDescoberta","Áreas de serviço descobertas"],["banheiroServico","Banheiros de serviço"],["lavabo","Lavabos"],
+  ["sacadaVaranda","Sacadas/Varandas"],["terraco","Terraços"],["closet","Closets"],["despensaDeposito","Despensa/Depósito"],
+  ["escritforioGabinete","Escritório/Gabinete"],["hall","Halls"],["quartoEmpregado","Quarto de empregada"],
+  ["banheiroPrivadoEmpregado","Banheiro de empregada"],["mezanino","Mezaninos"]];
+
+/* tipos: r=escolha única, m=múltipla (opções [id,rótulo] ou rótulo), n=número, s=lista, d=data, t=texto
+   so: "apartamento" | "casa" | "cond" (só em condomínio/apto) */
+const SECOES = [
+ {id:"regiao", nome:"Região", campos:[
+  {k:"usoPredominante",l:"Usos predominantes",t:"m",o:[["residencialUnifamiliar","Residencial Unifamiliar"],
+    ["residencialMultifamiliar","Residencial Multifamiliar"],["comercial","Comercial"],["industrial","Industrial"],
+    ["institucional","Institucional"]],def:["residencialUnifamiliar","residencialMultifamiliar"]},
+  {k:"infraestrutura",l:"Infraestrutura urbana",t:"m",o:[["infraestrutura_01","Água Potável"],["infraestrutura_02","Esgoto Sanitário"],
+    ["infraestrutura_03","Energia Elétrica"],["infraestrutura_04","Telefone"],["infraestrutura_05","Pavimentação"],
+    ["infraestrutura_06","Esgoto Pluvial"],["infraestrutura_07","Gás Canalizado"],["infraestrutura_08","Iluminação Pública"]]},
+  {k:"publicoComunitario",l:"Serviços públicos e comunitários",t:"m",o:[["publicoComunitario_01","Coleta de Lixo"],
+    ["publicoComunitario_02","Transporte Coletivo"],["publicoComunitario_03","Comércio"],["publicoComunitario_04","Rede Bancária"],
+    ["publicoComunitario_05","Educação"],["publicoComunitario_06","Saúde"],["publicoComunitario_07","Segurança"]]},
+  {k:"padraoEspesificacao",l:"Padrão das edificações na região",t:"r",o:PADRAO},
+  {k:"selectOneMenuVal",l:"Influências valorizantes",t:"r",o:["Sem Destaque","Shopping","Comércio","Orla",
+    "Estação de Metrô/Trem","Indústria","Parques","Clubes","Empreendimentos"],def:"Sem Destaque"},
+  {k:"selectOneMenuDesv",l:"Influências desvalorizantes",t:"r",o:["Sem Destaque","Area de Desmoronamento",
+    "Aterro Sanitário/Lixão","Estação de Tratamento de Esgoto","Estação Metrô/Trem","Subhabitação",
+    "Torre Telefonia ou Energia","Empreendimento","Indústria","Area Inundável","Presídios","Feira Livre"],def:"Sem Destaque"},
+  {k:"viaAcesso",l:"Via de acesso",t:"r",o:["Local","Coletora ou Secundária","Arterial ou Principal","Rodovia","Vicinal"]},
+  {k:"regiaoContextoUrbano",l:"Região no contexto urbano",t:"r",o:["Região Não Central","Região Central",
+    "Ocupação Periférica/Suburbana","Não Inserido na Malha"]},
+ ]},
+ {id:"patologia", nome:"Condomínio / Empreendimento", so:"cond", campos:[
+  {k:"Predios",l:"Nº de prédios",t:"n"},
+  {k:"totalUnidades",l:"Nº total de unidades",t:"n",so:"casa"},
+  {k:"numeroUnidadeTipologia",l:"Nº de unidades da tipologia",t:"n"},
+  {k:"ocupacaoTerreno",l:"Ocupação do terreno",t:"m",o:["Prédio(s)","Unidades isoladas","Lazer",
+    "Garagens/Estacionamentos","Arruamento","Comércio","Lotes Vagos"]},
+  {k:"infraEmpreendimento",l:"Infraestrutura do empreendimento",t:"m",o:["Água Potável","Esgoto Sanitário",
+    "Energia Elétrica","Telefone","Iluminação Pública","Pavimentação","Esgoto Pluvial"]},
+  {k:"padraoAcabamento",l:"Padrão do empreendimento",t:"r",o:PADRAO},
+  {k:"estadoConservacaoEmpreendimentoCondominio",l:"Estado de conservação",t:"r",o:CONSERV_EMP},
+  {k:"posicao",l:"Posição",t:"r",o:["Meio de Quadra","Esquina","Isolado"]},
+  {k:"cotaGreide",l:"Cota/Greide",t:"r",o:["Igual ou Acima","Abaixo"]},
+  {k:"cercamentoAbaEmpreedimento",l:"Cercamento",t:"r",o:["Total","Parcial","Não Possui"]},
+  {k:"tipoCercamentoFrente",l:"Cercamento — frente",t:"r",o:CERCA},
+  {k:"tipoCercamentoLateral",l:"Cercamento — laterais/fundo",t:"r",o:CERCA},
+  {k:"controleAcesso",l:"Controle de acesso",t:"r",o:["Sim","Não"]},
+ ]},
+ {id:"predio", nome:"Prédio", so:"apartamento", campos:[
+  {k:"elevador",l:"Nº de elevadores",t:"n"},
+  {k:"caracterizacaoCobertura",l:"Cobertura do prédio",t:"r",o:["Uso Coletivo","Cobertura Individual",
+    "Uso Individual e Coletivo","Sem Utilização"]},
+  {k:"estadoConcervacao",l:"Estado de conservação do prédio",t:"r",o:CONSERV},
+  {k:"ocupacaoTerreo",l:"Ocupação do térreo",t:"m",o:["Lojas","Sala(s)","Pilotis","Lazer","Unidades Residenciais","Garagens"]},
+  {k:"padraoAcabamentoPredio",l:"Padrão de acabamento do prédio",t:"r",o:PADRAO},
+  {k:"piso",l:"Circulação — piso",t:"s",o:PISO},
+  {k:"parede",l:"Circulação — parede",t:"s",o:PAREDE},
+  {k:"tipoEsquadrias",l:"Esquadrias (1º campo)",t:"s",o:ESQ},
+  {k:"paredeEsquadrias",l:"Esquadrias (2º campo)",t:"s",o:ESQ},
+  {k:"tipoFachadas",l:"Fachada (1º campo)",t:"s",o:FACH},
+  {k:"paredeFachadas",l:"Fachada (2º campo)",t:"s",o:FACH},
+ ]},
+ {id:"terreno", nome:"Terreno", so:"casa", campos:[
+  {k:"posicao",l:"Posição",t:"r",o:["Meio de Quadra","Esquina","Isolado"]},
+  {k:"cotaGreide",l:"Cota/Greide",t:"r",o:["Igual ou Acima","Abaixo"]},
+  {k:"formatoAproximado",l:"Formato aproximado",t:"r",o:["Retangular","Quadrado","Trapezoidal","Triangular","Irregular"]},
+  {k:"inclinacao",l:"Inclinação",t:"r",o:["Plano","Aclive para o Fundo","Declive para o Fundo"]},
+  {k:"cercamentoAbaTerreno",l:"Cercamento",t:"r",o:["Total","Parcial","Não Possui"]},
+  {k:"tipoCercamentoFrente",l:"Cercamento — frente",t:"r",o:CERCA},
+  {k:"tipoCercamentoLateral",l:"Cercamento — laterais/fundo",t:"r",o:CERCA},
+  {k:"vocacaoPrincipal",l:"Vocação principal",t:"r",o:["Residência Unifamiliar","Residência Multifamiliar",
+    "Comercial","Institucional","Industrial"]},
+ ]},
+ {id:"avaliandaI", nome:"Unidade — vistoria", campos:[
+  {k:"dataVistoria",l:"Data da vistoria",t:"d"},
+  {k:"andar",l:"Andar",t:"n",so:"apartamento"},
+  {k:"checkUnidadeCobertura",l:"Unidade de cobertura",t:"r",o:["Não","Sim"],so:"apartamento"},
+  {k:"posicaoFisica",l:"Posição da unidade",t:"r",o:["Frente/Canto","Frente/Meio","Fundos/Canto","Fundos/Meio","Lateral"],so:"apartamento"},
+  {k:"vagasApto",l:"Vagas de garagem",t:"g",so:"apartamento",o:[["cobertasLivre","Cobertas livres"],
+    ["cobertasBloqueadas","Cobertas bloqueadas"],["descobertasLivre","Descobertas livres"],["descobertasBloqueadas","Descobertas bloqueadas"]]},
+  {k:"vagasCasa",l:"Vagas de garagem",t:"g",so:"casa",o:[["totalCobertas","Cobertas"],["totalDescobertas","Descobertas"]]},
+  {k:"pavimentosCasa",l:"Pavimentos da casa",t:"g",so:"casa",o:[["terreos","Térreo"],["SS","Subsolo"],
+    ["mezaninos","Mezanino"],["sobrelojas","Sobreloja"],["outros","Outros (1º andar…)"],["corbeturas","Cobertura"]]},
+  {k:"implantacaoTerreno",l:"Implantação",t:"r",o:["Isolada","Geminada","Justaposta"],so:"casa"},
+  {k:"uso",l:"Uso",t:"r",o:["Residencial Unifamiliar","Residencial Multifamiliar","Residencial-Comercial/Institucional",
+    "Comercial/Institucional","Industrial"],so:"casa"},
+  {k:"estadoConservacao",l:"Estado de conservação",t:"r",o:CONSERV},
+  {k:"padraoAcabamento",l:"Padrão de acabamento",t:"r",o:PADRAO},
+  {k:"ocupacao",l:"Ocupação",t:"r",o:["Ocupado","Desocupado","Desocupado (aparentemente foi ocupado)","Não Constatado"]},
+  {k:"orientacao",l:"Orientação solar",t:"r",o:FSV},
+  {k:"vista",l:"Vista",t:"r",o:FSV},
+  {k:"tipoEsquadrias",l:"Esquadrias (1º campo)",t:"s",o:ESQ,so:"casa"},
+  {k:"paredeEsquadrias",l:"Esquadrias (2º campo)",t:"s",o:ESQ,so:"casa"},
+  {k:"tipoFachadas",l:"Fachada (1º campo)",t:"s",o:FACH,so:"casa"},
+  {k:"paredeFachadas",l:"Fachada (2º campo)",t:"s",o:FACH,so:"casa"},
+  {k:"forro",l:"Forro",t:"s",o:FORRO,so:"casa"},
+  {k:"telhado",l:"Telhado",t:"s",o:TELHADO,so:"casa"},
+ ]},
+ {id:"avaliandaII", nome:"Unidade — acabamentos e cômodos", campos:[
+  {k:"pisosMolhadas",l:"Áreas molhadas — piso",t:"s",o:PISO},
+  {k:"paredesMolhadas",l:"Áreas molhadas — parede",t:"s",o:PAREDE},
+  {k:"pisoSecas",l:"Áreas secas — piso",t:"s",o:PISO},
+  {k:"pavimentacao",l:"Pavimentos da unidade",t:"r",o:["PAV","T","COB","PAV + COB","SS","MEZ","SLJ"],def:"PAV",so:"apartamento"},
+  {k:"equipamentos",l:"Equipamentos (unidade e condomínio)",t:"m",o:EQUIP},
+  {k:"comodos",l:"Cômodos (quantidade)",t:"g",o:COMODOS},
+  {k:"obs",l:"Observações (não vão para o SIMIL)",t:"t"},
+ ]},
+];
+
+/* ---------------------------------------------------------------- estado */
+const LS = k => "vistoria:" + k;
+function ler(k, padrao){ try{ const v = localStorage.getItem(LS(k)); return v ? JSON.parse(v) : padrao; }catch(e){ return padrao; } }
+function gravar(k, v){ try{ localStorage.setItem(LS(k), JSON.stringify(v)); }catch(e){} }
+let pacote = ler("pacote", {os:[]});
+let atual = null;     // {ref, tipo, condominio, ...}
+let resp = {};        // respostas da O.S. atual
+
+const $ = s => document.querySelector(s);
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("on"),2600); }
+function esc(s){ return String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function curta(ref){ return (String(ref).split("/")[0].replace(/\D/g,"")).slice(-6); }
+
+/* ------------------------------------------------------------ lista O.S. */
+function renderLista(){
+  const l = $("#listaOS"); l.innerHTML = "";
+  const feitas = ler("feitas", {});
+  if(pacote.os.length){
+    $("#infoPacote").innerHTML = `${pacote.os.length} O.S. carregada(s)` + (pacote.gerado_em ? ` em ${esc(pacote.gerado_em)}` : "") + ".";
+  }
+  const extras = Object.keys(ler("rascunhos", {})).filter(r => !pacote.os.some(o => o.ref === r))
+    .map(r => ler("rascunhos", {})[r].meta).filter(Boolean);
+  pacote.os.concat(extras).forEach(o => {
+    const b = document.createElement("button"); b.className = "os";
+    const st = feitas[o.ref] ? `<span class="tag feita">salva</span>` : (ler("rascunhos",{})[o.ref] ? `<span class="tag">em andamento</span>` : "");
+    b.innerHTML = `${st}<b>OS ${esc(curta(o.ref))} — ${esc(o.tipo === "apartamento" ? "Apartamento" : "Casa")}</b>
+      <small>${esc([o.empreendimento, o.endereco, o.bairro, o.cidade].filter(Boolean).join(" · "))}</small>`;
+    b.onclick = () => abrir(o);
+    l.appendChild(b);
+  });
+}
+
+$("#btnCarregar").onclick = () => $("#arqPacote").click();
+$("#arqPacote").onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const p = JSON.parse(r.result);
+      if(!Array.isArray(p.os)) throw new Error("arquivo sem lista de O.S.");
+      pacote = p; gravar("pacote", p); renderLista(); toast(`${p.os.length} O.S. carregada(s)`);
+    }catch(err){ toast("Arquivo inválido: " + err.message); }
+  };
+  r.readAsText(f); e.target.value = "";
+};
+
+/* nova O.S. sem pacote */
+let novaTipo = null, novaCond = false;
+document.querySelectorAll("#novaTipo .chip").forEach(c => c.onclick = () => {
+  document.querySelectorAll("#novaTipo .chip").forEach(x => x.classList.remove("on")); c.classList.add("on"); novaTipo = c.dataset.v; });
+$("#novaCond").onclick = e => { novaCond = !novaCond; e.target.classList.toggle("on", novaCond); };
+$("#btnNova").onclick = () => {
+  const ref = $("#novaRef").value.trim();
+  if(!/^\d{4}\.\d{4}\.\d{9}\/\d{4}\.\d{2}\.\d{2}$/.test(ref)) return toast("Nº da O.S. no formato 7378.0041.001198939/2026.01.01");
+  if(!novaTipo) return toast("Escolha o tipo do imóvel");
+  abrir({ref, tipo: novaTipo, condominio: novaTipo === "apartamento" || novaCond});
+};
+
+/* ------------------------------------------------------------ formulário */
+function aplica(c, o){
+  if(!c.so) return true;
+  if(c.so === "cond") return o.tipo === "apartamento" || !!o.condominio;
+  return c.so === o.tipo;
+}
+
+function abrir(o){
+  atual = o;
+  const rasc = ler("rascunhos", {});
+  resp = rasc[o.ref] ? rasc[o.ref].resp : {};
+  // valores iniciais: padrão do formulário + pré-dados vindos do PC
+  SECOES.forEach(s => s.campos.forEach(c => {
+    const ch = s.id + "." + c.k;
+    if(resp[ch] === undefined && c.def !== undefined) resp[ch] = c.def;
+  }));
+  if(resp["avaliandaI.dataVistoria"] === undefined) { const h = new Date(); resp["avaliandaI.dataVistoria"] = new Date(h - h.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+  Object.entries(o.pre || {}).forEach(([k, v]) => { if(resp[k] === undefined) resp[k] = v; });
+
+  $("#titulo").textContent = `OS ${curta(o.ref)} — ${o.tipo === "apartamento" ? "Apartamento" : "Casa"}`;
+  $("#subtitulo").textContent = [o.empreendimento, o.cidade].filter(Boolean).join(" · ") || o.ref;
+  const pre = [o.endereco && `Endereço: ${o.endereco}`, o.bairro && `Bairro: ${o.bairro}`,
+    o.unidade && `Unidade: ${o.unidade}`, o.area && `Área averbada: ${o.area} m²`, o.novo !== undefined && (o.novo ? "Imóvel novo" : "Imóvel usado")]
+    .filter(Boolean).map(esc).join("<br>");
+  $("#preDados").innerHTML = pre || esc(o.ref);
+  $("#preDados").classList.toggle("oculto", !pre);
+  montar();
+  $("#telaLista").classList.add("oculto"); $("#telaForm").classList.remove("oculto");
+  $("#rodLista").classList.add("oculto"); $("#rodForm").classList.remove("oculto");
+  window.scrollTo(0,0);
+}
+
+function montar(){
+  const box = $("#secoes"); box.innerHTML = "";
+  SECOES.filter(s => aplica(s, atual)).forEach((s, i) => {
+    const d = document.createElement("details"); d.className = "cartao"; d.open = i === 0; d.dataset.sec = s.id;
+    d.innerHTML = `<summary>${esc(s.nome)}<span class="cont"></span></summary><div class="corpo"></div>`;
+    const corpo = d.querySelector(".corpo");
+    s.campos.filter(c => aplica(c, atual)).forEach(c => corpo.appendChild(campo(s.id, c)));
+    box.appendChild(d);
+  });
+  contar();
+}
+
+function campo(sec, c){
+  const ch = sec + "." + c.k;
+  const w = document.createElement("div"); w.className = "campo";
+  const rot = document.createElement("div"); rot.className = "rot";
+  rot.innerHTML = `<span>${esc(c.l)}</span>`;
+  if(c.t === "r" || c.t === "m"){
+    const lp = document.createElement("button"); lp.className = "limpar"; lp.textContent = "limpar";
+    lp.onclick = () => { delete resp[ch]; w.replaceWith(campo(sec, c)); salvarRascunho(); };
+    rot.appendChild(lp);
+  }
+  w.appendChild(rot);
+  const opts = (c.o || []).map(x => Array.isArray(x) ? x : [x, x]);
+
+  if(c.t === "r" || c.t === "m"){
+    const ch2 = document.createElement("div"); ch2.className = "chips";
+    opts.forEach(([v, l]) => {
+      const b = document.createElement("button"); b.className = "chip"; b.textContent = l;
+      const sel = () => c.t === "r" ? resp[ch] === v : (resp[ch] || []).includes(v);
+      b.classList.toggle("on", sel());
+      b.onclick = () => {
+        if(c.t === "r"){ resp[ch] = resp[ch] === v ? undefined : v; if(resp[ch] === undefined) delete resp[ch]; }
+        else { const a = new Set(resp[ch] || []); a.has(v) ? a.delete(v) : a.add(v); resp[ch] = [...a]; }
+        ch2.querySelectorAll(".chip").forEach((x, i) => x.classList.toggle("on",
+          c.t === "r" ? resp[ch] === opts[i][0] : (resp[ch] || []).includes(opts[i][0])));
+        salvarRascunho();
+      };
+      ch2.appendChild(b);
+    });
+    w.appendChild(ch2);
+  } else if(c.t === "s"){
+    const s = document.createElement("select");
+    s.innerHTML = `<option value="">—</option>` + opts.map(([v, l]) => `<option ${resp[ch] === v ? "selected" : ""}>${esc(l)}</option>`).join("");
+    s.onchange = () => { s.value ? resp[ch] = s.value : delete resp[ch]; salvarRascunho(); };
+    w.appendChild(s);
+  } else if(c.t === "n"){
+    w.appendChild(numero(ch));
+  } else if(c.t === "g"){
+    const g = document.createElement("div"); g.className = "grade";
+    opts.forEach(([v, l]) => {
+      const cel = document.createElement("div");
+      cel.innerHTML = `<div class="rot">${esc(l)}</div>`;
+      cel.appendChild(numero(sec + "." + v));
+      g.appendChild(cel);
+    });
+    w.appendChild(g);
+  } else if(c.t === "d"){
+    const i = document.createElement("input"); i.type = "date"; i.value = resp[ch] || "";
+    i.onchange = () => { resp[ch] = i.value; salvarRascunho(); };
+    w.appendChild(i);
+  } else {
+    const t = document.createElement("textarea"); t.value = resp[ch] || "";
+    t.oninput = () => { resp[ch] = t.value; salvarRascunho(); };
+    w.appendChild(t);
+  }
+  return w;
+}
+
+function numero(ch){
+  const n = document.createElement("div"); n.className = "num";
+  const i = document.createElement("input"); i.type = "number"; i.inputMode = "numeric"; i.min = 0;
+  i.value = resp[ch] ?? "";
+  const set = v => { if(v === "" || v === null){ delete resp[ch]; i.value = ""; } else { resp[ch] = Math.max(0, +v); i.value = resp[ch]; } salvarRascunho(); };
+  const m = document.createElement("button"); m.textContent = "−"; m.onclick = () => set(i.value === "" ? "" : Math.max(0, +i.value - 1));
+  const p = document.createElement("button"); p.textContent = "+"; p.onclick = () => set((+i.value || 0) + 1);
+  i.onchange = () => set(i.value);
+  n.append(m, i, p);
+  return n;
+}
+
+function preenchido(v){ return !(v === undefined || v === "" || (Array.isArray(v) && !v.length)); }
+function contar(){
+  let tot = 0, ok = 0;
+  document.querySelectorAll("#secoes details").forEach(d => {
+    const s = SECOES.find(x => x.id === d.dataset.sec);
+    const cs = s.campos.filter(c => aplica(c, atual) && c.k !== "obs");
+    const feitos = cs.filter(c => c.t === "g"
+      ? (c.o || []).some(([v]) => preenchido(resp[s.id + "." + v]))
+      : preenchido(resp[s.id + "." + c.k])).length;
+    tot += cs.length; ok += feitos;
+    const el = d.querySelector(".cont"); el.textContent = `${feitos}/${cs.length}`; el.classList.toggle("ok", feitos === cs.length);
+  });
+  $("#progresso").style.width = (tot ? ok / tot * 100 : 0) + "%";
+}
+
+function salvarRascunho(){
+  const r = ler("rascunhos", {});
+  r[atual.ref] = {meta: atual, resp, em: new Date().toISOString()};
+  gravar("rascunhos", r); contar();
+}
+
+$("#btnVoltar").onclick = () => {
+  atual = null;
+  $("#titulo").textContent = "Vistoria SIMIL"; $("#subtitulo").textContent = "Escolha a O.S."; $("#progresso").style.width = "0";
+  $("#telaForm").classList.add("oculto"); $("#telaLista").classList.remove("oculto");
+  $("#rodForm").classList.add("oculto"); $("#rodLista").classList.remove("oculto");
+  renderLista();
+};
+
+/* ------------------------------------------------------------ salvar */
+function montarSaida(){
+  const out = {versao: 1, ref: atual.ref, tipo: atual.tipo, condominio: !!atual.condominio,
+    salvo_em: new Date().toISOString(), campos: {}};
+  SECOES.filter(s => aplica(s, atual)).forEach(s => {
+    const sec = {};
+    s.campos.filter(c => aplica(c, atual)).forEach(c => {
+      if(c.t === "g"){ (c.o || []).forEach(([v]) => { if(preenchido(resp[s.id + "." + v])) sec[v] = resp[s.id + "." + v]; }); }
+      else if(preenchido(resp[s.id + "." + c.k])) sec[c.k] = resp[s.id + "." + c.k];
+    });
+    out.campos[s.id] = sec;
+  });
+  const dv = out.campos.avaliandaI && out.campos.avaliandaI.dataVistoria;
+  if(dv){ const [a, m, d] = dv.split("-"); out.campos.avaliandaI.dataVistoria = `${d}/${m}/${a}`; }
+  return out;
+}
+
+$("#btnSalvar").onclick = async () => {
+  const out = montarSaida();
+  const nome = `vistoria_${curta(atual.ref)}.json`;
+  const blob = new Blob([JSON.stringify(out, null, 1)], {type: "application/json"});
+  const arq = new File([blob], nome, {type: "application/json"});
+  const f = ler("feitas", {}); f[atual.ref] = out.salvo_em; gravar("feitas", f);
+  try{
+    if(navigator.canShare && navigator.canShare({files: [arq]})){
+      await navigator.share({files: [arq], title: nome});
+      toast("Escolha \"Salvar no Drive\" → pasta Vistorias SIMIL");
+      return;
+    }
+  }catch(e){ if(e.name === "AbortError") return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast("Arquivo baixado: mova para a pasta Vistorias SIMIL do Drive");
+};
+
+renderLista();
+if("serviceWorker" in navigator && location.protocol === "https:"){
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
