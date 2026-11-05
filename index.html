@@ -83,7 +83,7 @@ h2{font-size:15px;margin:18px 4px 8px;color:var(--suave);font-weight:600}
     <h2>Sem pacote?</h2>
     <div class="cartao"><div class="corpo" style="padding-top:14px">
       <div class="rot">Nº da O.S.</div>
-      <input type="text" id="novaRef" placeholder="7378.0041.001198939/2026.01.01" inputmode="numeric">
+      <input type="text" id="novaRef" placeholder="Só os números: 7378004100119893920260101" inputmode="numeric" autocomplete="off">
       <div class="rot" style="margin-top:12px">Tipo do imóvel</div>
       <div class="chips" id="novaTipo">
         <button class="chip" data-v="casa">Casa</button><button class="chip" data-v="apartamento">Apartamento</button>
@@ -303,14 +303,25 @@ $("#arqPacote").onchange = e => {
   r.readAsText(f); e.target.value = "";
 };
 
+/* nº da O.S.: digita só números (ou cola com pontos/barra) e o formulário formata */
+function formatarRef(v){
+  const d = String(v).replace(/\D/g, "").slice(0, 25);
+  const partes = [[0,4],[4,8],[8,17],[17,21],[21,23],[23,25]].map(([a,b]) => d.slice(a,b));
+  const seps = [".", ".", "/", ".", "."];
+  let out = partes[0];
+  for(let i = 1; i < partes.length; i++){ if(!partes[i]) break; out += seps[i-1] + partes[i]; }
+  return out;
+}
+$("#novaRef").addEventListener("input", e => { e.target.value = formatarRef(e.target.value); });
+
 /* nova O.S. sem pacote */
 let novaTipo = null, novaCond = false;
 document.querySelectorAll("#novaTipo .chip").forEach(c => c.onclick = () => {
   document.querySelectorAll("#novaTipo .chip").forEach(x => x.classList.remove("on")); c.classList.add("on"); novaTipo = c.dataset.v; });
 $("#novaCond").onclick = e => { novaCond = !novaCond; e.target.classList.toggle("on", novaCond); };
 $("#btnNova").onclick = () => {
-  const ref = $("#novaRef").value.trim();
-  if(!/^\d{4}\.\d{4}\.\d{9}\/\d{4}\.\d{2}\.\d{2}$/.test(ref)) return toast("Nº da O.S. no formato 7378.0041.001198939/2026.01.01");
+  const ref = formatarRef($("#novaRef").value);
+  if(!/^\d{4}\.\d{4}\.\d{9}\/\d{4}\.\d{2}\.\d{2}$/.test(ref)) return toast("Nº da O.S. incompleto: são 25 números");
   if(!novaTipo) return toast("Escolha o tipo do imóvel");
   abrir({ref, tipo: novaTipo, condominio: novaTipo === "apartamento" || novaCond});
 };
