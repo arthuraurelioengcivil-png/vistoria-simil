@@ -487,9 +487,9 @@ function montarSaida(){
 
 $("#btnSalvar").onclick = async () => {
   const out = montarSaida();
-  const nome = `vistoria_${curta(atual.ref)}.json`;
-  const blob = new Blob([JSON.stringify(out, null, 1)], {type: "application/json"});
-  const arq = new File([blob], nome, {type: "application/json"});
+  const nome = `vistoria_${curta(atual.ref)}.txt`;   // .txt: o Android só compartilha alguns tipos de arquivo
+  const blob = new Blob([JSON.stringify(out, null, 1)], {type: "text/plain"});
+  const arq = new File([blob], nome, {type: "text/plain"});
   const f = ler("feitas", {}); f[atual.ref] = out.salvo_em; gravar("feitas", f);
   try{
     if(navigator.canShare && navigator.canShare({files: [arq]})){
